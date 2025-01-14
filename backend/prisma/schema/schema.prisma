@@ -1,10 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
 }
 
 datasource db {
-  provider = "postgresql" // Change to match your database
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
 

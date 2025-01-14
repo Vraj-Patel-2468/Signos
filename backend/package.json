@@ -1,25 +1,33 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Backend for signos application.",
-  "main": "index.js",
+  "description": "Backend for the Signos",
+  "main": "app.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/app.ts",
+    "build": "tsc"
   },
-  "author": "Vraj patel",
+  "author": "CodingSloth996",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/nodemailer": "^6.4.17",
     "bcrypt": "^5.1.1",
-    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.16",
+    "prisma": "^6.1.0",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
-    "prisma": "^6.0.1",
+    "@types/socket.io": "^3.0.2",
+    "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
   }

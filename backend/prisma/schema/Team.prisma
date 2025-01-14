@@ -1,0 +1,13 @@
+model Team {
+    id Int @id @default(autoincrement()) @map("team_id")
+    name String 
+    description String
+    createdAt DateTime @default(now()) 
+    updatedAt DateTime 
+    
+    //ManyTOMany relation with User
+    users TeamUser[]
+
+    //OneToMany relation with Project
+    projects Project[]
+}
