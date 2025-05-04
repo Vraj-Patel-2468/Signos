@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement()) @map("user_id")
+  username  String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  // ManyToMany relation with Team
+  teams TeamUser[] 
+
+  createdCommunities Community[]
+
+  userCommunities UserCommunity[]
+
+  profile UserProfile?
+  posts   Post[]
+}
+
+model Team {
+  id          Int      @id @default(autoincrement()) @map("team_id")
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  // ManyToMany relation with User
+  users TeamUser[] 
+  // OneToMany relation with Project
+  projects Project[]
+}
+
+model TeamUser {
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId     Int
+  addedAt    DateTime @default(now())
+  roleInTeam String
+
+  @@id([userId, teamId])
+}
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String
+  startDate   DateTime  @default(now())
+  endDate     DateTime?
+
+  // ManyToOne relation with Team
+  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId Int
+
+  // OneToMany relation with Tasks
+  tasks Task[]
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  remarks     String?
+  rating      Int?
+  status      String
+  priority    String
+  dueDate     DateTime
+  assignedTo  Int
+
+  // ManyToOne relation with Project
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+
+  dependencies TaskDependency[] @relation("TaskDependency_task")
+
+  dependents TaskDependency[] @relation("TaskDependency_dependsOn")
+}
+
+model TaskDependency {
+  id              Int @id @default(autoincrement())
+  taskId          Int
+  dependsOnTaskId Int
+
+  task      Task @relation("TaskDependency_task", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn Task @relation("TaskDependency_dependsOn", fields: [dependsOnTaskId], references: [id])
+
+  @@unique([taskId, dependsOnTaskId])
+}
+
+model Community {
+  id          Int    @id @default(autoincrement()) @map("community_id")
+  name        String
+  description String
+  createdBy   Int
+
+  // ManyToOne relation with User (creator)
+  creator User @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  // OneToMany relation with Posts
+  posts Post[]
+
+  // ManyToMany relation with Users
+  members UserCommunity[]
+}
+
+model UserCommunity {
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  communityId Int
+
+  @@id([userId, communityId])
+}
+
+model UserProfile {
+  id        Int      @id @default(autoincrement()) @map("profile_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @unique
+  fullName  String?
+  bio       String?
+  avatarUrl String?
+  location  String?
+  techStack String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  // ManyToOne relation with Community
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  communityId Int
+
+  // ManyToOne relation with User
+  author User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+}
+
+model Otp {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  otp     String
+  expires DateTime
+}

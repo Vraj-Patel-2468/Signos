@@ -1,5 +1,5 @@
-enum Role {
-    USER = "USER",
-    TeamLeader = "TeamLeader",
-    TeamMember = "TeamMember"
+export default {
+    USER: "USER",
+    TeamLeader: "TeamLeader",
+    TeamMember: "TeamMember"
 }

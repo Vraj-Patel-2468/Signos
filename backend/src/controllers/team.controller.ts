@@ -1,79 +1,123 @@
-import { Request, Response } from "express";
-import { fetchTeamsByUser, fetchTeamById, deleteTeamById, updateTeamDetails, addUsersToTeam, removeUserFromTeam, createProject } from "../services/team.service";
+import { Application, Request, Response } from 'express';
+import * as teamService from '../services/team.service';
 
-export async function getTeamById(req: Request, res: Response): Promise<any> {
-    const { id } = req.body;
+export async function createTeam (req: Request, res: Response) {
+    const { name, description } = req.body;
+    const userId = req.body.id; 
+    
+    console.log("In controller");
     try {
-        const team = await fetchTeamById(id);
-        return res.status(200).json({ message: "Team details fetched successfully", team });
+        const newTeam = await teamService.createTeam({
+            name,
+            description,
+            users: {
+                create: [
+                    {
+                        userId: userId,
+                        roleInTeam: 'Leader',
+                    },
+                ],
+            },
+        });
+
+        const response = {
+            id: newTeam.id,
+            name: newTeam.name,
+            description: newTeam.description,
+            createdAt: newTeam.createdAt,
+            users: newTeam.users.map((user) => ({
+                ...user,
+                userId: undefined,
+                password: undefined,
+            })),
+        };
+
+        res.status(201).json(response);
     } catch (error) {
-        // console.error(error);
-        return res.status(500).json({ message: "Error fetching team details" });
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create team';
+        res.status(500).json({ message: errorMessage });
     }
-}
+    return;
+};
 
-export async function getUserTeams(req: Request, res: Response): Promise<any> {
-    const { id } = req.body;
+export async function getTeamDetails(req: Request, res: Response) {
+    const teamId = parseInt(req.params.teamId);
+
     try {
-        const teams = await fetchTeamsByUser(id); 
-        return res.status(200).json({ message: "User teams fetched successfully", teams });
+        const team = await teamService.getTeamDetails(teamId);
+
+        if (!team) {
+            return res.status(404).json({ message: 'Team not found' });
+        }
+
+        const response = {
+            id: team.id,
+            name: team.name,
+            description: team.description,
+            createdAt: team.createdAt,
+            users: team.users,
+            projects: team.projects
+        };
+
+        res.json(response);
     } catch (error) {
-        // console.error(error);
-        return res.status(500).json({ message: "Error fetching user details" });
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch team details';
+        res.status(500).json({ message: errorMessage });
     }
-}
+};
 
-export async function deleteTeam(req: Request, res: Response): Promise<any> {
-    const { id } = req.body;
+export async function addUserToTeam(req: Request, res: Response) {
+    const teamId = parseInt(req.params.teamId);
+    const { email, role } = req.body;
+    const requestingUserId = req.body.id; 
+
     try {
-        const team = await deleteTeamById(id);
-        return res.status(200).json({ message: "Team details deleted successfully" });
+        const result = await teamService.addUserToTeam(teamId, email, role, requestingUserId);
+
+        if (result.error) {
+            return res.status(result.status).json({ message: result.error });
+        }
+
+        res.status(201).json({ message: 'User added to the team successfully' });
     } catch (error) {
-        // console.error(error);
-        return res.status(500).json({ message: "Error deleting team details" });
+        const errorMessage = error instanceof Error ? error.message : 'Failed to add user to team';
+        res.status(500).json({ message: errorMessage });
     }
-}
+};
 
-export async function updateTeam(req: Request, res: Response): Promise<any> {
-    const { id, teamName, teamDescription } = req.body;
+export async function removeUserFromTeam (req: Request, res: Response) {
+    const teamId = parseInt(req.params.teamId);
+    const { email } = req.body;
+    const requestingUserId = req.body.id; 
+
     try {
-        const team = await updateTeamDetails({ id, teamName, teamDescription });
-        return res.status(200).json({ message: "Team details updated successfully" });
+        const result = await teamService.removeUserFromTeam(teamId, email, requestingUserId);
+
+        if (result.error) {
+            return res.status(result.status).json({ message: result.error });
+        }
+
+        res.status(204).send();
     } catch (error) {
-        // console.error(error);
-        return res.status(500).json({ message: "Error updating team details" });
+        const errorMessage = error instanceof Error ? error.message : 'Failed to remove user from team';
+        res.status(500).json({ message: errorMessage });
     }
-}
+};
 
-export async function addUsers(req: Request, res: Response): Promise<any> {
-    const { id, userIdsToAdd } = req.body;
-    try {
-        const team = await addUsersToTeam(userIdsToAdd, id);
-        return res.status(200).json({ message: "Team created successfully", team });
-    } catch (error) {
-        // console.error(error);
-        return res.status(500).json({ message: "Error creating team" });
-    }    
-}
+export async function deleteTeam(req: Request, res: Response) {
+    const teamId = parseInt(req.params.teamId);
+    const requestingUserId = req.body.id;
 
-export async function removeUser(req: Request, res: Response): Promise<any> {
-    const { userId, teamId } = req.body;
     try {
-        const team = await removeUserFromTeam(userId, teamId);
-        return res.status(200).json({ message: "Team created successfully", team });
-    } catch (error) {
-        // console.error(error);
-        return res.status(500).json({ message: "Error creating team" });
-    }    
-}
+        const result = await teamService.deleteTeam(teamId, requestingUserId);
 
-export async function makeProject(req: Request, res: Response): Promise<any> {
-    const { teamId, projectName, projectDescription } = req.body;
-    try {
-        const project = await createProject(teamId, projectName, projectDescription);
-        return res.status(200).json({ message: "Project created successfully", project });
+        if (result.error) {
+            return res.status(result.status).json({ message: result.error });
+        }
+
+        res.status(204).send();
     } catch (error) {
-        // console.error(error);
-        return res.status(500).json({ message: "Error creating project" });
-    }  
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete team';
+        res.status(500).json({ message: errorMessage });
+    }
 }
